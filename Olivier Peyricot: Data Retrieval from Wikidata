@@ -1,0 +1,20 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema: <http://schema.org/>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX bd: <http://www.bigdata.com/rdf#>
+
+SELECT ?item ?itemLabel ?itemDescription ?birthDate ?occupationLabel WHERE {
+  SERVICE <https://query.wikidata.org/sparql> {
+    ?item rdfs:label "Olivier Peyricot"@en .
+    OPTIONAL { ?item schema:description ?itemDescription . }
+    OPTIONAL { ?item wdt:P569 ?birthDate . }
+    OPTIONAL { ?item wdt:P106 ?occupation .
+               ?occupation rdfs:label ?occupationLabel .
+               FILTER(LANG(?occupationLabel) = "en")
+    }
+    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+  }
+}
+LIMIT 10
