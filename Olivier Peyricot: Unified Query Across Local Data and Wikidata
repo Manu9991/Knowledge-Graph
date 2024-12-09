@@ -1,0 +1,44 @@
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX schema: <http://schema.org/>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX bd: <http://www.bigdata.com/rdf#>
+
+SELECT ?source ?DisplayName ?ArtistBio ?BeginDate ?EndDate ?WikiLabel ?WikiDescription ?BirthDate ?OccupationLabel WHERE {
+    {
+        # Query Artists.json dataset with its own limit
+        SELECT ?source ?DisplayName ?ArtistBio ?BeginDate ?EndDate WHERE {
+            SERVICE <x-sparql-anything:location=file:///C:/Users/ghost/OneDrive/Desktop/Lab%204/Non_KG/Artists.json> {
+                ?artist xyz:DisplayName ?DisplayName ;
+                        xyz:ArtistBio ?ArtistBio ;
+                        xyz:BeginDate ?BeginDate ;
+                        xyz:EndDate ?EndDate .
+                FILTER(CONTAINS(LCASE(?DisplayName), "olivier peyricot"))
+                BIND("Artists JSON" AS ?source)
+            }
+        }
+        LIMIT 5
+    }
+    UNION
+    {
+        # Query Wikidata with filtering for English labels and descriptions
+        SELECT ?source ?WikiLabel ?WikiDescription ?BirthDate ?OccupationLabel WHERE {
+            SERVICE <https://query.wikidata.org/sparql> {
+                BIND(wd:Q55219605 AS ?WikiEntity)  # Replace with ?WikiQID dynamically if needed
+                ?WikiEntity rdfs:label ?WikiLabel .
+                FILTER(LANG(?WikiLabel) = "en")
+                OPTIONAL { ?WikiEntity schema:description ?WikiDescription .
+                           FILTER(LANG(?WikiDescription) = "en") }
+                OPTIONAL { ?WikiEntity wdt:P569 ?BirthDate . }
+                OPTIONAL { ?WikiEntity wdt:P106 ?Occupation .
+                           ?Occupation rdfs:label ?OccupationLabel .
+                           FILTER(LANG(?OccupationLabel) = "en")
+                }
+                BIND("Wikidata" AS ?source)
+            }
+        }
+        LIMIT 10
+    }
+}
