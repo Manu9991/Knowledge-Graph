@@ -1,0 +1,41 @@
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+PREFIX fx: <http://sparql.xyz/facade-x/ns/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?source ?DisplayName ?ArtistBio ?BeginDate ?EndDate ?Title ?Artist ?Date ?Medium ?Dimensions ?CreditLine ?AccessionNumber
+WHERE {
+    {
+        # Query for Olivier Peyricot in Artists.json dataset
+        SELECT ?source ?DisplayName ?ArtistBio ?BeginDate ?EndDate
+        WHERE {
+            SERVICE <x-sparql-anything:location=file:///C:/Users/ghost/OneDrive/Desktop/Lab%204/Non_KG/Artists.json> {
+                ?artist xyz:DisplayName ?DisplayName ;
+                        xyz:ArtistBio ?ArtistBio ;
+                        xyz:BeginDate ?BeginDate ;
+                        xyz:EndDate ?EndDate .
+                FILTER(CONTAINS(LCASE(?DisplayName), "olivier peyricot"))
+                BIND("Artists JSON" AS ?source)
+            }
+        }
+    }
+    UNION
+    {
+        # Query for Olivier Peyricot in Artworks.json dataset
+        SELECT ?source ?Title ?Artist ?Date ?Medium ?Dimensions ?CreditLine ?AccessionNumber
+        WHERE {
+            SERVICE <x-sparql-anything:location=file:///C:/Users/ghost/OneDrive/Desktop/Lab%204/Non_KG/Artworks.json> {
+                ?artwork xyz:Title ?Title ;
+                         xyz:Artist ?ArtistList ;
+                         xyz:ArtistBio ?ArtistBioList ;
+                         xyz:Date ?Date ;
+                         xyz:Medium ?Medium ;
+                         xyz:Dimensions ?Dimensions ;
+                         xyz:CreditLine ?CreditLine ;
+                         xyz:AccessionNumber ?AccessionNumber .
+                ?ArtistList fx:anySlot ?Artist .
+                FILTER(CONTAINS(LCASE(?Artist), "olivier peyricot"))
+                BIND("Artworks JSON" AS ?source)
+            }
+        }
+    }
+}
