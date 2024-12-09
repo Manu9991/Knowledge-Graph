@@ -1,0 +1,58 @@
+PREFIX xyz: <http://sparql.xyz/facade-x/data/>
+PREFIX fx: <http://sparql.xyz/facade-x/ns/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?source ?name ?objectName ?placeName ?Title ?Artist ?ArtistBio ?Date
+WHERE {
+    {
+        # Subquery for artists from France within the timeline in the JSON dataset (Artists.json)
+        SELECT ?source ?name
+        WHERE {
+            SERVICE <x-sparql-anything:location=file:///C:/Users/ghost/OneDrive/Desktop/Lab%204/Non_KG/Artists.json> {
+                ?artist xyz:DisplayName ?name ;
+                        xyz:ArtistBio ?bio ;
+                        xyz:BeginDate ?beginDate ;
+                        xyz:EndDate ?endDate .
+                FILTER(CONTAINS(LCASE(?bio), "french"))
+                FILTER(xsd:int(?beginDate) >= 1800 && xsd:int(?endDate) <= 1900) # Timeline filter
+                BIND("JSON" AS ?source)
+            }
+        }
+        LIMIT 10
+    }
+    UNION
+    {
+        # Subquery for objects available in France within the timeline in the CSV dataset (Penn_Museum_Collections_Data.csv)
+        SELECT ?source ?objectName ?placeName
+        WHERE {
+            SERVICE <x-sparql-anything:location=file:///C:/Users/ghost/OneDrive/Desktop/Lab%204/Non_KG/Penn_Museum_Collections_Data.csv,csv.headers=true,csv.delimiter=,> {
+                ?row xyz:objectName ?objectName ;
+                     xyz:placeName ?placeName ;
+                     xyz:earlyDate ?earlyDate ;
+                     xyz:lateDate ?lateDate .
+                FILTER(CONTAINS(LCASE(?placeName), "france"))
+                FILTER(xsd:int(?earlyDate) >= 1800 && xsd:int(?lateDate) <= 1900) # Timeline filter
+                BIND("CSV" AS ?source)
+            }
+        }
+        LIMIT 10
+    }
+    UNION
+    {
+        # Subquery for artworks in the timeline from Artworks.json
+        SELECT ?source ?Title ?Artist ?ArtistBio ?Date
+        WHERE {
+            SERVICE <x-sparql-anything:location=file:///C:/Users/ghost/OneDrive/Desktop/Lab%204/Non_KG/Artworks.json> {
+                ?artwork xyz:Title ?Title ;
+                         xyz:Artist ?ArtistList ;
+                         xyz:ArtistBio ?ArtistBioList ;
+                         xyz:Date ?Date .
+                ?ArtistList fx:anySlot ?Artist .
+                ?ArtistBioList fx:anySlot ?ArtistBio .
+                FILTER(xsd:int(?Date) >= 1800 && xsd:int(?Date) <= 1900) # Timeline filter
+                BIND("Artworks JSON" AS ?source)
+            }
+        }
+        LIMIT 10
+    }
+}
